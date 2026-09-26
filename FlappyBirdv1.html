@@ -1,0 +1,48 @@
+<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bayboschklima proje</title>
+<style>
+body{margin:0;background:#6ecff6;display:flex;justify-content:center;align-items:center;height:100vh}
+canvas{background:#87CEEB;border:2px solid #333}
+</style></head><body>
+<canvas id=c width=420 height=700></canvas>
+<script>
+const c=document.getElementById('c'),x=c.getContext('2d');
+let bird={x:80,y:250,v:0,r:14},g=.45,j=-8;
+let pipes=[],score=0,best=+localStorage.best||0,over=false,start=false,t=0;
+function add(){let gap=170,gy=80+Math.random()*370;pipes.push({x:420,w:60,gy,gap,s:false});}
+add();
+onkeydown=e=>{if(e.code==="Space"){if(over)reset();start=true;bird.v=j;}};
+onmousedown=()=>{if(over)reset();start=true;bird.v=j;};
+function reset(){bird={x:80,y:250,v:0,r:14};pipes=[];add();score=0;over=false;start=false;t=0;}
+function upd(){
+ if(over)return;
+ if(start){bird.v+=g;bird.y+=bird.v;}
+ t++; if(t>100){add();t=0;}
+ for(let p of pipes){
+   p.x-=3;
+   if(!p.s&&p.x+p.w<bird.x){p.s=true;score++;if(score>best){best=score;localStorage.best=best;}}
+   if(bird.x+bird.r>p.x&&bird.x-bird.r<p.x+p.w){
+      if(bird.y-bird.r<p.gy||bird.y+bird.r>p.gy+p.gap)over=true;
+   }
+ }
+ pipes=pipes.filter(p=>p.x>-80);
+ if(bird.y>700-20||bird.y<0)over=true;
+}
+function draw(){
+ x.clearRect(0,0,420,700);
+ x.fillStyle="#5c3";x.fillRect(0,680,420,20);
+ for(let p of pipes){
+  x.fillStyle="green";
+  x.fillRect(p.x,0,p.w,p.gy);
+  x.fillRect(p.x,p.gy+p.gap,p.w,700);
+ }
+ x.fillStyle="yellow";
+ x.beginPath();x.arc(bird.x,bird.y,bird.r,0,7);x.fill();
+ x.fillStyle="#000";x.font="24px Arial";x.fillText(score,200,40);
+ x.font="16px Arial";x.fillText("Best:"+best,10,25);
+ if(!start&&!over)x.fillText("ZIPLA",60,330);
+ if(over){x.font="36px Arial";x.fillText("Oyun bitti!",110,300);x.font="20px Arial";x.fillText("Tekrar başlamak için Space/Tıkla",55,340);}
+}
+(function loop(){upd();draw();requestAnimationFrame(loop)})();
+</script></body></html>
