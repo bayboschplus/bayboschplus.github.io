@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flappy Bird - Modern</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+    
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #111;
+            font-family: 'Press+Start 2P', monospace, sans-serif;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        #Canvas {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, #4ec0ca, #388e3c);
+            overflow: hidden;
+        }
+
+        #Birdy {
+            width: 40px;
+            height: 30px;
+            background: url('https://raw.githubusercontent.com/samuelsjaardema/Flappy-Bird/master/img/bird.png') no-repeat;
+            background-size: 300% 100%;
+            position: absolute;
+            top: 50%;
+            left: 20%;
+            z-index: 150;
+            transform-origin: center center;
+        }
+
+        .Pipe {
+            position: absolute;
+            top: 0;
+            left: 100%;
+            width: 60px;
+            background: linear-gradient(90deg, #73bf2e, #558022);
+            border: 3px solid #2d4312;
+            box-shadow: inset -5px 0px 0px rgba(0,0,0,0.2);
+            animation: PipeMovement 12s linear infinite;
+        }
+
+        @keyframes PipeMovement {
+            from { left: 100%; }
+            to { left: -100px; }
+        }
+
+        .paused {
+            animation-play-state: paused !important;
+        }
+
+        #PauseButton {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 45px;
+            height: 45px;
+            background: #f39c12;
+            border: 2px solid #d35400;
+            border-radius: 8px;
+            color: white;
+            font-size: 20px;
+            text-align: center;
+            line-height: 41px;
+            cursor: pointer;
+            z-index: 200;
+            box-shadow: 0 4px 0 #d35400;
+        }
+        #PauseButton:active {
+            transform: translateY(4px);
+            box-shadow: 0 0 0 #d35400;
+        }
+
+        #InstructionBox {
+            position: absolute;
+            top: 30%;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            color: white;
+            font-size: 16px;
+            text-shadow: 2px 2px 0 #000;
+            z-index: 250;
+            pointer-events: none;
+        }
+
+        #CurrentScoreCard {
+            position: absolute;
+            top: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 40px;
+            color: white;
+            text-shadow: 3px 3px 0 #000;
+            z-index: 100;
+        }
+
+        #LostScoreScreen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 280px;
+            padding: 20px;
+            background: #ded895;
+            border: 4px solid #554320;
+            border-radius: 10px;
+            text-align: center;
+            display: none;
+            z-index: 300;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            font-size: 14px;
+            color: #554320;
+        }
+        
+        #LostScoreScreen span {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        #LostScoreScreen .score-val {
+            font-size: 20px;
+            color: #fff;
+            text-shadow: 2px 2px 0 #000;
+            margin-bottom: 15px;
+        }
+
+        #ResetButton {
+            margin-top: 10px;
+            font-family: 'Press+Start 2P', monospace;
+            background: #f1c40f;
+            border: 2px solid #b7950b;
+            color: #fff;
+            text-shadow: 1px 1px 0 #000;
+            padding: 10px 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="Canvas">
+        <div id="InstructionBox">
+            Tıklayın veya Boşluk Tuşu ile Uçun<br><br>
+            "P" ile Durdurun
+        </div>
+
+        <div id="CurrentScoreCard">
+            <span id="CurrentScore">0</span>
+        </div>
+
+        <div id="LostScoreScreen">
+            <strong>OYUN BİTTİ</strong><br><br>
+            <span>Skor</span>
+            <span id="FinalScore" class="score-val">0</span>
+            <span>En İyi</span>
+            <span id="BestScore" class="score-val">0</span>
+            <button id="ResetButton" type="button" class="btn btn-warning btn-block">Tekrar Oyna</button>
+        </div>
+
+        <div id="Birdy"></div>
+
+        <div id="PauseButton">
+            <span class="glyphicon glyphicon-pause"></span>
+        </div>
+    </div>
+
+    <!-- jQuery CDN -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script>
+        $(function(){
+            setTimeout(function(){ $('#InstructionBox').fadeOut(); }, 4000);
+
+            var canvasObject = $('#Canvas');
+            var birdyObj = $('#Birdy');
+            var gameLoopIntervalID = 0;
+            var Paused = false;
+            var Lost = false;
+            var CurrentScore = 0;
+
+            var birdTop = 50; // Yüzde cinsinden
+            var gravVeloc = 0;
+            var gravAccel = 0.25;
+            var terminalVelocity = 4;
+            var angle = 0;
+            
+            var wingTimer = 0;
+            var wingFrames = ['0%', '50%', '100%'];
+
+            function startGame() {
+                if (Lost) return;
+                gameLoopIntervalID = setInterval(gameLoop, 30);
+                $('.Pipe').removeClass('paused');
+                $('#PauseButton span').removeClass('glyphicon-play').addClass('glyphicon-pause');
+                Paused = false;
+            }
+
+            function pauseGame() {
+                clearInterval(gameLoopIntervalID);
+                $('.Pipe').addClass('paused');
+                $('#PauseButton span').removeClass('glyphicon-pause').addClass('glyphicon-play');
+                Paused = true;
+            }
+
+            function togglePause() {
+                if (Lost) return;
+                if (Paused) {
+                    startGame();
+                } else {
+                    pauseGame();
+                }
+            }
+
+            function jump() {
+                if (Paused || Lost) return;
+                gravVeloc = -6; // Zıplama kuvveti
+                angle = -30;
+            }
+
+            function gameLoop() {
+                // Kuşun fizik hareketi
+                gravVeloc += gravAccel;
+                if (gravVeloc > terminalVelocity) gravVeloc = terminalVelocity;
+                
+                birdTop += (gravVeloc / canvasObject.height()) * 100 * 1.5;
+                if (birdTop < 0) birdTop = 0;
+
+                // Açı değişimi
+                angle += 3;
+                if (angle > 90) angle = 90;
+
+                birdyObj.css({
+                    'top': birdTop + '%',
+                    'transform': 'rotate(' + angle + 'deg)'
+                });
+
+                // Kanat animasyonu
+                wingTimer++;
+                if (wingTimer % 5 === 0) {
+                    var frameIdx = (Math.floor(wingTimer / 5) % 3);
+                    birdyObj.css('background-position-x', wingFrames[frameIdx]);
+                }
+
+                // Sınır kontrolü (Yere çarpma)
+                if (birdTop > 88) {
+                    endGame();
+                }
+
+                checkCollisions();
+                incrementScore();
+            }
+
+            // Boru üretimi
+            setInterval(function() {
+                if (Paused || Lost) return;
+                var gap = 35; // Boru arasındaki boşluk (%)
+                var minH = 10;
+                var maxH = 100 - gap - (minH * 2);
+                var topH = Math.random() * maxH + minH;
+                var botTop = topH + gap;
+                var botH = 100 - botTop;
+
+                $('<div/>').addClass('Pipe').css('height', topH + '%').data('scored', false).appendTo(canvasObject);
+                $('<div/>').addClass('Pipe BottomPipe').css({height: botH + '%', top: botTop + '%'}).data('scored', false).appendTo(canvasObject);
+                
+                // Eski boruları temizle
+                $('.Pipe').each(function() {
+                    if ($(this.offsetParent).length && $(this).offset().left < -150) {
+                        $(this).remove();
+                    }
+                });
+            }, 2400);
+
+            function checkCollisions() {
+                var bRect = birdyObj[0].getBoundingClientRect();
+
+                $('.Pipe').each(function() {
+                    var pRect = this.getBoundingClientRect();
+                    if (!(bRect.right < pRect.left || 
+                          bRect.left > pRect.right || 
+                          bRect.bottom < pRect.top || 
+                          bRect.top > pRect.bottom)) {
+                        endGame();
+                    }
+                });
+            }
+
+            function incrementScore() {
+                $('.BottomPipe').each(function() {
+                    var bRect = birdyObj[0].getBoundingClientRect();
+                    var pRect = this.getBoundingClientRect();
+
+                    if (!$(this).data('scored') && bRect.left > pRect.right) {
+                        CurrentScore++;
+                        $('#CurrentScore').text(CurrentScore);
+                        $(this).data('scored', true);
+                    }
+                });
+            }
+
+            function endGame() {
+                if (Lost) return;
+                Lost = true;
+                pauseGame();
+
+                var highScore = getCookie('HighScore') || 0;
+                var best = Math.max(CurrentScore, highScore);
+                setCookie('HighScore', best, 365);
+
+                $('#FinalScore').text(CurrentScore);
+                $('#BestScore').text(best);
+                $('#LostScoreScreen').slideDown();
+            }
+
+            function resetGame() {
+                Lost = false;
+                CurrentScore = 0;
+                $('#CurrentScore').text('0');
+                $('.Pipe').remove();
+                birdTop = 50;
+                gravVeloc = 0;
+                angle = 0;
+                $('#LostScoreScreen').slideUp();
+                startGame();
+            }
+
+            // Olay Dinleyicileri
+            canvasObject.on('mousedown touchstart', function(e) {
+                e.preventDefault();
+                jump();
+            });
+
+            $('#PauseButton').on('mousedown touchstart', function(e) {
+                e.stopPropagation();
+                togglePause();
+            });
+
+            $('#ResetButton').on('click', function() {
+                resetGame();
+            });
+
+            $(document).keydown(function(e) {
+                if (e.which === 32) { // Boşluk
+                    e.preventDefault();
+                    jump();
+                }
+                if (e.which === 80) { // P tuşu
+                    togglePause();
+                }
+            });
+
+            // 1. parti çerezler
+            function setCookie(name, value, days) {
+                var d = new Date();
+                d.setTime(d.getTime() + (days*24*60*60*1000));
+                document.cookie = name + "=" + value + ";expires=" + d.toUTCString() + ";path=/";
+            }
+
+            function getCookie(name) {
+                var nameEQ = name + "=";
+                var ca = document.cookie.split(';');
+                for(var i=0; i < ca.length; i++) {
+                    var c = ca[i];
+                    while (c.charAt(0)==' ') c = c.substring(1,c.length);
+                    if (c.indexOf(nameEQ) == 0) return parseInt(c.substring(nameEQ.length,c.length));
+                }
+                return 0;
+            }
+
+            // Oyunu Başlat
+            startGame();
+        });
+    </script>
+</body>
+</html>
