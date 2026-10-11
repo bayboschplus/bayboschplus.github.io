@@ -3,17 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Cicikus 2.4</title>
-    
-    <!-- Google Fonts -->
+    <title>Cicikus 2.5</title>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
-    
     <style>
         * {
             box-sizing: border-box;
             -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
         }
         body, html {
             margin: 0;
@@ -21,380 +18,368 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
-            background: #111;
-            font-family: 'Press Start 2P', monospace, sans-serif;
-            -webkit-user-select: none;
-            user-select: none;
+            background: #222;
+            font-family: 'Press Start 2P', monospace;
         }
-
-        #Canvas {
+        #game-container {
             position: relative;
             width: 100%;
             height: 100%;
-            background: linear-gradient(to bottom, #4ec0ca, #388e3c);
-            overflow: hidden;
-            cursor: pointer;
+            max-width: 480px;
+            margin: 0 auto;
         }
-
-        /* Kuş Tasarımı (Resim yerine CSS ile oluşturuldu) */
-        #Birdy {
-            width: 42px;
-            height: 32px;
-            background: #f8e71c;
-            border: 3px solid #000;
-            border-radius: 50% 50% 40% 40%;
-            position: absolute;
-            top: 50%;
-            left: 20%;
-            z-index: 150;
-            transform-origin: center center;
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background: #70c5ce;
         }
-        /* Kuşun gözü */
-        #Birdy::after {
-            content: '';
-            position: absolute;
-            right: 8px;
-            top: 6px;
-            width: 8px;
-            height: 8px;
-            background: #fff;
-            border: 2px solid #000;
-            border-radius: 50%;
-        }
-        /* Kuşun gagası */
-        #Birdy::before {
-            content: '';
-            position: absolute;
-            right: -10px;
-            top: 12px;
-            width: 0;
-            height: 0;
-            border-top: 5px solid transparent;
-            border-bottom: 5px solid transparent;
-            border-left: 12px solid #f5a623;
-        }
-
-        .Pipe {
+        #ui-layer {
             position: absolute;
             top: 0;
-            left: 100%;
-            width: 65px;
-            background: linear-gradient(90deg, #73bf2e, #558022);
-            border: 3px solid #2d4312;
-            box-shadow: inset -6px 0px 0px rgba(0,0,0,0.2);
-            animation: PipeMovement 12s linear infinite;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
         }
-
-        @keyframes PipeMovement {
-            from { left: 100%; }
-            to { left: -100px; }
-        }
-
-        .paused {
-            animation-play-state: paused !important;
-        }
-
-        #PauseButton {
+        #pause-btn {
             position: absolute;
-            top: 20px;
-            right: 20px;
+            top: 15px;
+            right: 15px;
             width: 45px;
             height: 45px;
             background: #f39c12;
-            border: 2px solid #d35400;
+            border: 3px solid #fff;
             border-radius: 8px;
             color: white;
-            font-size: 20px;
-            text-align: center;
-            line-height: 41px;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: auto;
             cursor: pointer;
-            z-index: 200;
             box-shadow: 0 4px 0 #d35400;
         }
-        #PauseButton:active {
-            transform: translateY(4px);
-            box-shadow: 0 0 0 #d35400;
+        #pause-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #d35400;
         }
-
-        #InstructionBox {
-            position: absolute;
-            top: 30%;
-            left: 50%;
-            transform: translateX(-50%);
-            text-align: center;
-            color: white;
-            font-size: 14px;
-            line-height: 22px;
-            text-shadow: 2px 2px 0 #000;
-            z-index: 250;
-            pointer-events: none;
-            width: 90%;
-        }
-
-        #CurrentScoreCard {
-            position: absolute;
-            top: 10%;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 36px;
-            color: white;
-            text-shadow: 3px 3px 0 #000;
-            z-index: 100;
-        }
-
-        #LostScoreScreen {
+        #game-over-screen {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 280px;
-            padding: 20px;
             background: #ded895;
             border: 4px solid #554320;
-            border-radius: 10px;
+            border-radius: 12px;
+            padding: 20px;
             text-align: center;
-            display: none;
-            z-index: 300;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-            font-size: 13px;
             color: #554320;
+            display: none;
+            pointer-events: auto;
+            width: 80%;
+            max-width: 300px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.4);
         }
-        
-        #LostScoreScreen span {
-            display: block;
-            margin-bottom: 5px;
-        }
-
-        #LostScoreScreen .score-val {
-            font-size: 18px;
+        .score-val {
+            font-size: 20px;
             color: #fff;
             text-shadow: 2px 2px 0 #000;
-            margin-bottom: 12px;
+            margin: 8px 0 15px 0;
         }
-
-        #ResetButton {
-            margin-top: 10px;
-            font-family: 'Press Start 2P', monospace;
-            background: #f1c40f;
-            border: 2px solid #b7950b;
-            color: #fff;
-            text-shadow: 1px 1px 0 #000;
-            padding: 12px;
+        #restart-btn {
             width: 100%;
+            padding: 12px;
+            background: #f1c40f;
+            border: 3px solid #b7950b;
+            color: #fff;
+            font-family: inherit;
+            font-size: 12px;
+            text-shadow: 1px 1px 0 #000;
             cursor: pointer;
+            border-radius: 6px;
         }
     </style>
 </head>
 <body>
 
-    <div id="Canvas">
-        <div id="InstructionBox">
-            Ekrana Dokunarak Uçun!<br><br>
-            Sağ üstteki tuşla Durdurun
-        </div>
-
-        <div id="CurrentScoreCard">
-            <span id="CurrentScore">0</span>
-        </div>
-
-        <div id="LostScoreScreen">
-            <strong>OYUN BİTTİ</strong><br><br>
-            <span>Skor</span>
-            <span id="FinalScore" class="score-val">0</span>
-            <span>En İyi</span>
-            <span id="BestScore" class="score-val">0</span>
-            <button id="ResetButton" type="button" class="btn btn-warning">Tekrar Oyna</button>
-        </div>
-
-        <div id="Birdy"></div>
-
-        <div id="PauseButton">
-            <span class="glyphicon glyphicon-pause"></span>
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+        
+        <div id="ui-layer">
+            <div id="pause-btn">❚❚</div>
+            
+            <div id="game-over-screen">
+                <div style="font-size: 14px; margin-bottom: 15px;">OYUN BİTTİ</div>
+                <div style="font-size: 10px;">SKOR</div>
+                <div id="final-score" class="score-val">0</div>
+                <div style="font-size: 10px;">EN İYİ</div>
+                <div id="best-score" class="score-val">0</div>
+                <button id="restart-btn">TEKRAR OYNA</button>
+            </div>
         </div>
     </div>
 
-    <!-- jQuery CDN -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
     <script>
-        $(function(){
-            setTimeout(function(){ $('#InstructionBox').fadeOut(); }, 4000);
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const pauseBtn = document.getElementById("pause-btn");
+        const gameOverScreen = document.getElementById("game-over-screen");
+        const finalScoreEl = document.getElementById("final-score");
+        const bestScoreEl = document.getElementById("best-score");
+        const restartBtn = document.getElementById("restart-btn");
 
-            var canvasObject = $('#Canvas');
-            var birdyObj = $('#Birdy');
-            var gameLoopIntervalID = 0;
-            var Paused = false;
-            var Lost = false;
-            var CurrentScore = 0;
+        // Canvas Boyutlandırma
+        function resizeCanvas() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+        }
+        resizeCanvas();
+        window.addEventListener("resize", resizeCanvas);
 
-            var birdTop = 50; 
-            var gravVeloc = 0;
-            var gravAccel = 0.25;
-            var terminalVelocity = 4;
-            var angle = 0;
+        // Oyun Durum Değişkenleri
+        let isPaused = false;
+        let isGameOver = false;
+        let score = 0;
+        let frameCount = 0;
 
-            function startGame() {
-                if (Lost) return;
-                gameLoopIntervalID = setInterval(gameLoop, 30);
-                $('.Pipe').removeClass('paused');
-                $('#PauseButton span').removeClass('glyphicon-play').addClass('glyphicon-pause');
-                Paused = false;
-            }
-
-            function pauseGame() {
-                clearInterval(gameLoopIntervalID);
-                $('.Pipe').addClass('paused');
-                $('#PauseButton span').removeClass('glyphicon-pause').addClass('glyphicon-play');
-                Paused = true;
-            }
-
-            function togglePause() {
-                if (Lost) return;
-                if (Paused) {
-                    startGame();
-                } else {
-                    pauseGame();
-                }
-            }
-
-            function jump() {
-                if (Paused || Lost) return;
-                gravVeloc = -6; 
-                angle = -30;
-            }
-
-            function gameLoop() {
-                gravVeloc += gravAccel;
-                if (gravVeloc > terminalVelocity) gravVeloc = terminalVelocity;
+        // Kuş Nesnesi
+        const bird = {
+            x: 60,
+            y: canvas.height / 2,
+            radius: 14,
+            velocity: 0,
+            gravity: 0.35,
+            jumpPower: -7,
+            rotation: 0,
+            
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
                 
-                birdTop += (gravVeloc / canvasObject.height()) * 100 * 1.5;
-                if (birdTop < 0) birdTop = 0;
+                // Açı hesaplama
+                this.rotation = Math.min(Math.PI / 4, Math.max(-Math.PI / 4, this.velocity * 0.08));
+                ctx.rotate(this.rotation);
 
-                angle += 3;
-                if (angle > 90) angle = 90;
+                // Kuş Gövdesi
+                ctx.fillStyle = "#f8e71c";
+                ctx.beginPath();
+                ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = "#000";
+                ctx.stroke();
 
-                birdyObj.css({
-                    'top': birdTop + '%',
-                    'transform': 'rotate(' + angle + 'deg)'
-                });
+                // Göz
+                ctx.fillStyle = "#fff";
+                ctx.beginPath();
+                ctx.arc(6, -4, 5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
 
-                if (birdTop > 88) {
+                ctx.fillStyle = "#000";
+                ctx.beginPath();
+                ctx.arc(8, -4, 2, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Gaka
+                ctx.fillStyle = "#e67e22";
+                ctx.beginPath();
+                ctx.moveTo(8, 2);
+                ctx.lineTo(18, 5);
+                ctx.lineTo(8, 8);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.restore();
+            },
+            
+            update() {
+                this.velocity += this.gravity;
+                this.y += this.velocity;
+
+                // Tavan ve taban sınırları
+                if (this.y - this.radius < 0) {
+                    this.y = this.radius;
+                    this.velocity = 0;
+                }
+                if (this.y + this.radius > canvas.height - 40) { // Zemin seviyesi
+                    endGame();
+                }
+            },
+            
+            jump() {
+                if (!isPaused && !isGameOver) {
+                    this.velocity = this.jumpPower;
+                }
+            },
+
+            reset() {
+                this.y = canvas.height / 2;
+                this.velocity = 0;
+            }
+        };
+
+        // Boru Yönetimi
+        const pipes = [];
+        const pipeWidth = 55;
+        const pipeGap = 130;
+
+        function spawnPipe() {
+            const minHeight = 40;
+            const maxHeight = canvas.height - 40 - pipeGap - minHeight;
+            const topHeight = Math.floor(Math.random() * (maxHeight - minHeight + 1)) + minHeight;
+
+            pipes.push({
+                x: canvas.width,
+                topHeight: topHeight,
+                bottomY: topHeight + pipeGap,
+                passed: false
+            });
+        }
+
+        function updatePipes() {
+            if (frameCount % 100 === 0) {
+                spawnPipe();
+            }
+
+            for (let i = pipes.length - 1; i >= 0; i--) {
+                let p = pipes[i];
+                p.x -= 2.5; // Boru hızı
+
+                // Çarpışma Kontrolü
+                if (
+                    bird.x + bird.radius > p.x &&
+                    bird.x - bird.radius < p.x + pipeWidth &&
+                    (bird.y - bird.radius < p.topHeight || bird.y + bird.radius > p.bottomY)
+                ) {
                     endGame();
                 }
 
-                checkCollisions();
-                incrementScore();
-            }
-
-            // Boru üretimi
-            setInterval(function() {
-                if (Paused || Lost) return;
-                var gap = 35; 
-                var minH = 10;
-                var maxH = 100 - gap - (minH * 2);
-                var topH = Math.random() * maxH + minH;
-                var botTop = topH + gap;
-                var botH = 100 - botTop;
-
-                $('<div/>').addClass('Pipe').css('height', topH + '%').data('scored', false).appendTo(canvasObject);
-                $('<div/>').addClass('Pipe BottomPipe').css({height: botH + '%', top: botTop + '%'}).data('scored', false).appendTo(canvasObject);
-                
-                $('.Pipe').each(function() {
-                    if ($(this.offsetParent).length && $(this).offset().left < -150) {
-                        $(this).remove();
-                    }
-                });
-            }, 2400);
-
-            function checkCollisions() {
-                var bRect = birdyObj[0].getBoundingClientRect();
-
-                $('.Pipe').each(function() {
-                    var pRect = this.getBoundingClientRect();
-                    if (!(bRect.right < pRect.left || 
-                          bRect.left > pRect.right || 
-                          bRect.bottom < pRect.top || 
-                          bRect.top > pRect.bottom)) {
-                        endGame();
-                    }
-                });
-            }
-
-            function incrementScore() {
-                $('.BottomPipe').each(function() {
-                    var bRect = birdyObj[0].getBoundingClientRect();
-                    var pRect = this.getBoundingClientRect();
-
-                    if (!$(this).data('scored') && bRect.left > pRect.right) {
-                        CurrentScore++;
-                        $('#CurrentScore').text(CurrentScore);
-                        $(this).data('scored', true);
-                    }
-                });
-            }
-
-            function endGame() {
-                if (Lost) return;
-                Lost = true;
-                pauseGame();
-
-                var highScore = getCookie('HighScore') || 0;
-                var best = Math.max(CurrentScore, highScore);
-                setCookie('HighScore', best, 365);
-
-                $('#FinalScore').text(CurrentScore);
-                $('#BestScore').text(best);
-                $('#LostScoreScreen').slideDown();
-            }
-
-            function resetGame() {
-                Lost = false;
-                CurrentScore = 0;
-                $('#CurrentScore').text('0');
-                $('.Pipe').remove();
-                birdTop = 50;
-                gravVeloc = 0;
-                angle = 0;
-                $('#LostScoreScreen').slideUp();
-                startGame();
-            }
-
-            // Sadece Dokunma / Tıklama Olayları (Klavyeler iptal edildi)
-            canvasObject.on('mousedown touchstart', function(e) {
-                e.preventDefault();
-                jump();
-            });
-
-            $('#PauseButton').on('mousedown touchstart', function(e) {
-                e.stopPropagation();
-                togglePause();
-            });
-
-            $('#ResetButton').on('click touchstart', function(e) {
-                e.preventDefault();
-                resetGame();
-            });
-
-            // Çerez Fonksiyonları
-            function setCookie(name, value, days) {
-                var d = new Date();
-                d.setTime(d.getTime() + (days*24*60*60*1000));
-                document.cookie = name + "=" + value + ";expires=" + d.toUTCString() + ";path=/";
-            }
-
-            function getCookie(name) {
-                var nameEQ = name + "=";
-                var ca = document.cookie.split(';');
-                for(var i=0; i < ca.length; i++) {
-                    var c = ca[i];
-                    while (c.charAt(0)==' ') c = c.substring(1,c.length);
-                    if (c.indexOf(nameEQ) == 0) return parseInt(c.substring(nameEQ.length,c.length));
+                // Skor Kazanma
+                if (!p.passed && p.x + pipeWidth < bird.x) {
+                    p.passed = true;
+                    score++;
                 }
-                return 0;
+
+                // Ekrandan çıkan boruyu bellekten sil
+                if (p.x + pipeWidth < 0) {
+                    pipes.splice(i, 1);
+                }
+            }
+        }
+
+        function drawPipes() {
+            ctx.fillStyle = "#73bf2e";
+            ctx.strokeStyle = "#2d4312";
+            ctx.lineWidth = 3;
+
+            pipes.forEach(p => {
+                // Üst Boru
+                ctx.fillRect(p.x, 0, pipeWidth, p.topHeight);
+                ctx.strokeRect(p.x, 0, pipeWidth, p.topHeight);
+
+                // Alt Boru
+                const bottomHeight = canvas.height - 40 - p.bottomY;
+                ctx.fillRect(p.x, p.bottomY, pipeWidth, bottomHeight);
+                ctx.strokeRect(p.x, p.bottomY, pipeWidth, bottomHeight);
+            });
+        }
+
+        // Zemin ve Arka Plan
+        function drawEnvironment() {
+            // Zemin
+            ctx.fillStyle = "#ded895";
+            ctx.fillRect(0, canvas.height - 40, canvas.width, 40);
+            ctx.strokeStyle = "#554320";
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(0, canvas.height - 40);
+            ctx.lineTo(canvas.width, canvas.height - 40);
+            ctx.stroke();
+
+            // Skor Göstergesi
+            if (!isGameOver) {
+                ctx.fillStyle = "#fff";
+                ctx.strokeStyle = "#000";
+                ctx.lineWidth = 4;
+                ctx.font = "28px 'Press Start 2P'";
+                ctx.textAlign = "center";
+                ctx.strokeText(score, canvas.width / 2, 60);
+                ctx.fillText(score, canvas.width / 2, 60);
+            }
+        }
+
+        // Ana Oyun Döngüsü (Akıcı 60 FPS)
+        function loop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (!isPaused && !isGameOver) {
+                bird.update();
+                updatePipes();
+                frameCount++;
             }
 
-            // Oyunu Başlat
-            startGame();
+            drawPipes();
+            drawEnvironment();
+            bird.draw();
+
+            requestAnimationFrame(loop);
+        }
+
+        // Kontroller
+        function togglePause() {
+            if (isGameOver) return;
+            isPaused = !isPaused;
+            pauseBtn.innerText = isPaused ? "▶" : "❚❚";
+        }
+
+        function endGame() {
+            isGameOver = true;
+            let best = localStorage.getItem("flappy_best") || 0;
+            if (score > best) {
+                best = score;
+                localStorage.setItem("flappy_best", best);
+            }
+            finalScoreEl.innerText = score;
+            bestScoreEl.innerText = best;
+            gameOverScreen.style.display = "block";
+        }
+
+        function resetGame() {
+            bird.reset();
+            pipes.length = 0;
+            score = 0;
+            frameCount = 0;
+            isGameOver = false;
+            isPaused = false;
+            pauseBtn.innerText = "❚❚";
+            gameOverScreen.style.display = "none";
+        }
+
+        // Dokunma / Tıklama Dinleyicileri
+        canvas.addEventListener("touchstart", (e) => {
+            e.preventDefault();
+            bird.jump();
         });
+
+        canvas.addEventListener("mousedown", (e) => {
+            bird.jump();
+        });
+
+        pauseBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            togglePause();
+        });
+
+        restartBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            resetGame();
+        });
+
+        // Oyunu Başlat
+        requestAnimationFrame(loop);
     </script>
 </body>
 </html>
